@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { StyleSheet, View, Text, ScrollView, SafeAreaView, Image } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, SafeAreaView, Image, TouchableOpacity, Platform } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFonts } from 'expo-font';
 
 export default function TabTwoScreen() {
@@ -8,22 +8,25 @@ export default function TabTwoScreen() {
     'Vazirmatn': require('@/assets/fonts/Vazirmatn-VariableFont_wght.ttf'),
   });
 
-  const [selectedDate, setSelectedDate] = useState({
-    day: new Date().getDate(),
-    month: new Date().getMonth() + 1,
-    year: new Date().getFullYear()
-  });
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const generateTimes = () => {
-    const times = [];
-    let startTime = 7 * 60; 
-    const endTime = 17 * 60 - 20; 
-    const interval = 20; 
+  const englishToPersianNumber = (num: number): string => {
+    const persianDigits = '۰۱۲۳۴۵۶۷۸۹';
+    return num.toString().replace(/[0-9]/g, (digit: string) => persianDigits[parseInt(digit)]);
+  };
+
+  const generateTimes = (): string[] => {
+    const times: string[] = [];
+    let startTime = 7 * 60;
+    const endTime = 17 * 60 - 20;
+    const interval = 20;
 
     while (startTime <= endTime) {
       const hours = Math.floor(startTime / 60);
       const minutes = startTime % 60;
-      times.push(`${hours}:${minutes < 10 ? '0' : ''}${minutes}`);
+      const formattedTime = `${englishToPersianNumber(hours)}:${minutes < 10 ? '۰' : ''}${englishToPersianNumber(minutes)}`;
+      times.push(formattedTime);
       startTime += interval;
     }
 
@@ -32,12 +35,39 @@ export default function TabTwoScreen() {
 
   const times = generateTimes();
 
+  const handleDateChange = (event: any, date?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (date) setSelectedDate(date);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Image source={require('@/assets/images/logo.png')} style={styles.logo} />
       </View>
+
       <ScrollView style={styles.content}>
+        <View style={styles.datePickerContainer}>
+          <Text style={styles.selectedDateText}>
+            تاریخ انتخاب شده: {selectedDate.toLocaleDateString('fa-IR')}
+          </Text>
+          <TouchableOpacity 
+            style={styles.datePickerButton} 
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={styles.datePickerButtonText}>انتخاب تاریخ</Text>
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display="default"
+              onChange={handleDateChange}
+              locale="fa-IR"
+            />
+          )}
+        </View>
+
         <View style={styles.timesContainer}>
           {times.map((time, index) => (
             <View key={index} style={styles.timeContainer}>
@@ -58,13 +88,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  datePickerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: 20,
-    marginTop: 10,
-  },
   container: {
     flex: 1,
     backgroundColor: 'white',
@@ -73,13 +96,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
   },
+  datePickerContainer: {
+    marginVertical: 20,
+    alignItems: 'center',
+  },
+  selectedDateText: {
+    fontSize: 18,
+    fontFamily: 'Vazirmatn',
+    marginBottom: 10,
+  },
+  datePickerButton: {
+    backgroundColor: '#8A4ADE',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  datePickerButtonText: {
+    fontSize: 16,
+    fontFamily: 'Vazirmatn',
+    color: 'white',
+  },
   timesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
   timeContainer: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#F0F0F0',
     width: '30%',
     marginVertical: 5,
     paddingVertical: 10,
@@ -87,6 +131,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#000',
   },
   timeText: {
     fontSize: 16,
@@ -95,10 +141,10 @@ const styles = StyleSheet.create({
   },
   logo: {
     position: 'absolute',
-    left: 20,  
-    top: 10,   
+    left: 20,
+    top: 10,
     width: 80,
-    height: 80, 
+    height: 80,
     resizeMode: 'contain',
     borderRadius: 40,
   },
